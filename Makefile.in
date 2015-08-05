@@ -50,6 +50,8 @@ all: @default_target@
 
 newlib: stamps/build-gcc-newlib
 
+freebsd: stamps/build-gcc-freebsd-stage1
+
 ifneq ($(findstring --disable-multilib,$(MULTILIB_FLAGS)),)
 linux: stamps/build-gcc-linux-stage2
 else
@@ -66,11 +68,11 @@ endif
 
 src/binutils:
 	mkdir -p src
-	cd src && git clone -b riscv-binutils-2.25 https://github.com/arunthomas/binutils-gdb.git || true
+	cd src && git clone -b riscv-binutils-2.25-freebsd https://github.com/freebsd-riscv/binutils-gdb.git || true
 
 src/gcc:
 	mkdir -p src
-	cd src && git clone -b riscv-gcc-5.2.0 https://github.com/arunthomas/gcc.git || true
+	cd src && git clone -b riscv-gcc-5.2.0-freebsd https://github.com/freebsd-riscv/gcc.git || true
 
 $(addprefix src/original-,$(PACKAGES)):
 	mkdir -p src
@@ -111,9 +113,31 @@ stamps/build-binutils-linux: src/binutils
 	$(MAKE) -C $(notdir $@) install
 	mkdir -p $(dir $@) && touch $@
 
+stamps/build-binutils-freebsd: src/binutils
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && autoreconf -i $(CURDIR)/$<-gdb && $(CURDIR)/$<-gdb/configure \
+		--target=riscv$(XLEN)-unknown-freebsd11.0 \
+		--prefix=$(INSTALL_DIR) \
+		--with-sysroot=$(SYSROOT) \
+		$(MULTILIB_FLAGS) \
+		--disable-nls \
+		--disable-gdb \
+		--disable-libdecnumber \
+		--disable-readline \
+		--disable-sim
+	$(MAKE) -C $(notdir $@)
+	$(MAKE) -C $(notdir $@) install
+	mkdir -p $(dir $@) && touch $@
+
 stamps/build-linux-headers:
 	mkdir -p $(SYSROOT)/usr/
 	cp -R $(srcdir)/linux-headers/include $(SYSROOT)/usr/
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-freebsd-headers:
+	mkdir -p $(SYSROOT)/usr/
+	cp -R $(srcdir)/freebsd-headers/include $(SYSROOT)/usr/
 	mkdir -p $(dir $@) && touch $@
 
 stamps/build-glibc-linux-headers: src/glibc stamps/build-gcc-linux-stage1
@@ -166,6 +190,38 @@ stamps/build-gcc-linux-stage1: src/gcc stamps/build-binutils-linux \
 		--disable-threads \
 		--enable-tls \
 		--enable-languages=c \
+		--disable-libatomic \
+		--disable-libmudflap \
+		--disable-libssp \
+		--disable-libquadmath \
+		--disable-libgomp \
+		--disable-nls \
+		$(MULTILIB_FLAGS) \
+		--disable-bootstrap \
+		$(WITH_ARCH)
+	$(MAKE) -C $(notdir $@) inhibit-libc=true all-gcc
+	$(MAKE) -C $(notdir $@) inhibit-libc=true install-gcc
+	$(MAKE) -C $(notdir $@) inhibit-libc=true all-target-libgcc
+	$(MAKE) -C $(notdir $@) inhibit-libc=true install-target-libgcc
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-gcc-freebsd-stage1: src/gcc stamps/build-binutils-freebsd \
+                               stamps/build-freebsd-headers
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && $(CURDIR)/$</configure \
+		--target=riscv$(XLEN)-unknown-freebsd11.0 \
+		--prefix=$(INSTALL_DIR) \
+		--with-sysroot=$(SYSROOT) \
+		--with-newlib \
+		--without-headers \
+		--disable-shared \
+		--disable-threads \
+		--enable-tls \
+		--enable-languages=c \
+		--with-gmp=/usr/local \
+		--with-mpfr=/usr/local \
+		--with-mpc=/usr/local \
 		--disable-libatomic \
 		--disable-libmudflap \
 		--disable-libssp \
