@@ -2,7 +2,8 @@ srcdir := @abs_top_srcdir@
 builddir := @abs_top_builddir@
 INSTALL_DIR := @prefix@
 
-PACKAGES := binutils gcc glibc newlib
+PACKAGES := glibc newlib
+GIT_PACKAGES := binutils gcc
 gcc_version := 5.2.0
 binutils_version := 2.25
 glibc_version := 2.22
@@ -63,6 +64,14 @@ linux:
 	$(MAKE) stamps/build-gcc-linux-stage2 XLEN=
 endif
 
+src/binutils:
+	mkdir -p src
+	cd src && git clone -b riscv-binutils-2.25 https://github.com/arunthomas/binutils-gdb.git || true
+
+src/gcc:
+	mkdir -p src
+	cd src && git clone -b riscv-gcc-5.2.0 https://github.com/arunthomas/gcc.git || true
+
 $(addprefix src/original-,$(PACKAGES)):
 	mkdir -p src
 	rm -rf $@ $(subst original-,,$@)-*
@@ -88,12 +97,16 @@ patches: $(addprefix $(srcdir)/patches/,$(PACKAGES))
 stamps/build-binutils-linux: src/binutils
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
-	cd $(notdir $@) && $(CURDIR)/$</configure \
+	cd $(notdir $@) && autoreconf -i $(CURDIR)/$<-gdb && $(CURDIR)/$<-gdb/configure \
 		--target=riscv$(XLEN)-unknown-linux-gnu \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
 		$(MULTILIB_FLAGS) \
-		--disable-nls
+		--disable-nls \
+		--disable-gdb \
+		--disable-libdecnumber \
+		--disable-readline \
+		--disable-sim
 	$(MAKE) -C $(notdir $@)
 	$(MAKE) -C $(notdir $@) install
 	mkdir -p $(dir $@) && touch $@
@@ -232,7 +245,7 @@ stamps/build-gcc-newlib: src/newlib-gcc stamps/build-binutils-newlib
 	mkdir -p $(dir $@) && touch $@
 
 clean:
-	rm -rf build-* $(addprefix src/,$(PACKAGES)) stamps
+	rm -rf build-* $(addprefix src/,$(PACKAGES)) $(addprefix src/,$(GIT_PACKAGES)) stamps
 
 distclean: clean
 	rm -rf src
