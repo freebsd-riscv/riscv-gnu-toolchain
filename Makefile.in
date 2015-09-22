@@ -213,12 +213,12 @@ stamps/build-gcc-freebsd-stage1: src/gcc stamps/build-binutils-freebsd \
 		--target=riscv$(XLEN)-unknown-freebsd11.0 \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
-		--with-newlib \
+		--without-newlib \
 		--without-headers \
 		--disable-shared \
 		--disable-threads \
 		--enable-tls \
-		--enable-languages=c \
+		--enable-languages=c,c++ \
 		--with-gmp=/usr/local \
 		--with-mpfr=/usr/local \
 		--with-mpc=/usr/local \
