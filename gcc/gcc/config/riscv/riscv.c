@@ -120,7 +120,7 @@ along with GCC; see the file COPYING3.  If not see
 /* The maximum distance between the top of the stack frame and the
    value sp has when we save and restore registers.  This is set by the
    range  of load/store offsets and must also preserve stack alignment. */
-#define RISCV_MAX_FIRST_STACK_STEP (RISCV_IMM_REACH/2 - 16)
+#define RISCV_MAX_FIRST_STACK_STEP (IMM_REACH/2 - 16)
 
 /* True if INSN is a riscv.md pattern or asm statement.  */
 #define USEFUL_INSN_P(INSN)						\
@@ -408,7 +408,7 @@ static int
 riscv_build_integer_1 (struct riscv_integer_op *codes, HOST_WIDE_INT value,
 		       enum machine_mode mode)
 {
-  HOST_WIDE_INT low_part = RISCV_CONST_LOW_PART (value);
+  HOST_WIDE_INT low_part = CONST_LOW_PART (value);
   int cost = INT_MAX, alt_cost;
   struct riscv_integer_op alt_codes[RISCV_MAX_INTEGER_OPS];
 
@@ -1131,8 +1131,8 @@ riscv_add_offset (rtx temp, rtx reg, HOST_WIDE_INT offset)
       /* Leave OFFSET as a 16-bit offset and put the excess in HIGH.
          The addition inside the macro CONST_HIGH_PART may cause an
          overflow, so we need to force a sign-extension check.  */
-      high = gen_int_mode (RISCV_CONST_HIGH_PART (offset), Pmode);
-      offset = RISCV_CONST_LOW_PART (offset);
+      high = gen_int_mode (CONST_HIGH_PART (offset), Pmode);
+      offset = CONST_LOW_PART (offset);
       high = riscv_force_temporary (temp, high);
       reg = riscv_force_temporary (temp, gen_rtx_PLUS (Pmode, high, reg));
     }
@@ -1756,6 +1756,34 @@ riscv_output_move (rtx dest, rtx src)
   if (dbl_p && riscv_split_64bit_move_p (dest, src))
     return "#";
 
+  if (dest_code == REG && GP_REG_P (REGNO (dest)))
+    {
+      if (src_code == REG && FP_REG_P (REGNO (src)))
+	return dbl_p ? "fmv.x.d\t%0,%1" : "fmv.x.s\t%0,%1";
+
+      if (src_code == MEM)
+	switch (GET_MODE_SIZE (mode))
+	  {
+	  case 1: return "lbu\t%0,%1";
+	  case 2: return "lhu\t%0,%1";
+	  case 4: return "lw\t%0,%1";
+	  case 8: return "ld\t%0,%1";
+	  }
+
+      if (src_code == CONST_INT)
+	return "li\t%0,%1";
+
+      if (src_code == HIGH)
+	return "lui\t%0,%h1";
+
+      if (symbolic_operand (src, VOIDmode))
+	switch (riscv_classify_symbolic_expression (src))
+	  {
+	  case SYMBOL_GOT_DISP: return "la\t%0,%1";
+	  case SYMBOL_ABSOLUTE: return "lla\t%0,%1";
+	  default: gcc_unreachable();
+	  }
+    }
   if ((src_code == REG && GP_REG_P (REGNO (src)))
       || (src == CONST0_RTX (mode)))
     {
@@ -1782,37 +1810,6 @@ riscv_output_move (rtx dest, rtx src)
 	  case 2: return "sh\t%z1,%0";
 	  case 4: return "sw\t%z1,%0";
 	  case 8: return "sd\t%z1,%0";
-	  }
-    }
-  if (dest_code == REG && GP_REG_P (REGNO (dest)))
-    {
-      if (src_code == REG)
-	{
-	  if (FP_REG_P (REGNO (src)))
-	    return dbl_p ? "fmv.x.d\t%0,%1" : "fmv.x.s\t%0,%1";
-	}
-
-      if (src_code == MEM)
-	switch (GET_MODE_SIZE (mode))
-	  {
-	  case 1: return "lbu\t%0,%1";
-	  case 2: return "lhu\t%0,%1";
-	  case 4: return "lw\t%0,%1";
-	  case 8: return "ld\t%0,%1";
-	  }
-
-      if (src_code == CONST_INT)
-	return "li\t%0,%1";
-
-      if (src_code == HIGH)
-	return "lui\t%0,%h1";
-
-      if (symbolic_operand (src, VOIDmode))
-	switch (riscv_classify_symbolic_expression (src))
-	  {
-	  case SYMBOL_GOT_DISP: return "la\t%0,%1";
-	  case SYMBOL_ABSOLUTE: return "lla\t%0,%1";
-	  default: gcc_unreachable();
 	  }
     }
   if (src_code == REG && FP_REG_P (REGNO (src)))
@@ -2991,7 +2988,7 @@ riscv_elf_select_rtx_section (enum machine_mode mode, rtx x,
       if (strncmp (s->named.name, ".rodata.cst", strlen (".rodata.cst")) == 0)
 	{
 	  /* Rename .rodata.cst* to .srodata.cst*. */
-	  char name[32];
+	  char *name = (char *) alloca (strlen (s->named.name) + 2);
 	  sprintf (name, ".s%s", s->named.name + 1);
 	  return get_section (name, s->named.common.flags, NULL);
 	}
@@ -3437,23 +3434,23 @@ riscv_expand_prologue (void)
   if (size > 0)
     {
       if (SMALL_OPERAND (-size))
-	emit_insn (gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
-				  GEN_INT (-size)));
+	{
+	  insn = gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
+				GEN_INT (-size));
+	  RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+	}
       else
 	{
 	  riscv_emit_move (RISCV_PROLOGUE_TEMP (Pmode), GEN_INT (-size));
 	  emit_insn (gen_add3_insn (stack_pointer_rtx,
 				    stack_pointer_rtx,
 				    RISCV_PROLOGUE_TEMP (Pmode)));
-	}
-    }
 
-  if (frame->total_size > 0)
-    {
-      /* Describe the effect of the instructions that adjusted sp.  */
-      insn = plus_constant (Pmode, stack_pointer_rtx, -frame->total_size);
-      insn = gen_rtx_SET (VOIDmode, stack_pointer_rtx, insn);
-      riscv_set_frame_expr (insn);
+	  /* Describe the effect of the previous instructions.  */
+	  insn = plus_constant (Pmode, stack_pointer_rtx, -size);
+	  insn = gen_rtx_SET (VOIDmode, stack_pointer_rtx, insn);
+	  riscv_set_frame_expr (insn);
+	}
     }
 }
 
@@ -4222,13 +4219,25 @@ riscv_conditional_register_usage (void)
     }
 }
 
+/* Return a register priority for hard reg REGNO.  */
+static int
+riscv_register_priority (int regno)
+{
+  /* Favor x8-x15/f8-f15 to improve the odds of RVC instruction selection.  */
+  if (TARGET_RVC && (IN_RANGE (regno, GP_REG_FIRST + 8, GP_REG_FIRST + 15)
+		     || IN_RANGE (regno, FP_REG_FIRST + 8, FP_REG_FIRST + 15)))
+    return 1;
+
+  return 0;
+}
+
 /* Implement TARGET_TRAMPOLINE_INIT.  */
 
 static void
 riscv_trampoline_init (rtx m_tramp, tree fndecl, rtx chain_value)
 {
   rtx addr, end_addr, mem;
-  rtx trampoline[4];
+  uint32_t trampoline[4];
   unsigned int i;
   HOST_WIDE_INT static_chain_offset, target_function_offset;
 
@@ -4242,30 +4251,27 @@ riscv_trampoline_init (rtx m_tramp, tree fndecl, rtx chain_value)
   addr = force_reg (Pmode, XEXP (m_tramp, 0));
   end_addr = riscv_force_binary (Pmode, PLUS, addr, GEN_INT (TRAMPOLINE_CODE_SIZE));
 
-#define OP(X) gen_int_mode (X, SImode)
-#define MATCH_LREG ((Pmode) == DImode ? MATCH_LD : MATCH_LW)
-
   /* auipc   t0, 0
      l[wd]   t1, target_function_offset(t0)
-     l[wd]   $static_chain, static_chain_offset(t0)
+     l[wd]   t0, static_chain_offset(t0)
      jr      t1
   */
+  trampoline[0] = OPCODE_AUIPC | (STATIC_CHAIN_REGNUM << SHIFT_RD);
+  trampoline[1] = (Pmode == DImode ? OPCODE_LD : OPCODE_LW)
+		  | (RISCV_PROLOGUE_TEMP_REGNUM << SHIFT_RD)
+		  | (STATIC_CHAIN_REGNUM << SHIFT_RS1)
+		  | (target_function_offset << SHIFT_IMM);
+  trampoline[2] = (Pmode == DImode ? OPCODE_LD : OPCODE_LW)
+		  | (STATIC_CHAIN_REGNUM << SHIFT_RD)
+		  | (STATIC_CHAIN_REGNUM << SHIFT_RS1)
+		  | (static_chain_offset << SHIFT_IMM);
+  trampoline[3] = OPCODE_JALR | (RISCV_PROLOGUE_TEMP_REGNUM << SHIFT_RS1);
 
-  trampoline[0] = OP (RISCV_UTYPE (AUIPC, STATIC_CHAIN_REGNUM, 0));
-  trampoline[1] = OP (RISCV_ITYPE (LREG, RISCV_PROLOGUE_TEMP_REGNUM,
-		    STATIC_CHAIN_REGNUM, target_function_offset));
-  trampoline[2] = OP (RISCV_ITYPE (LREG, STATIC_CHAIN_REGNUM,
-		    STATIC_CHAIN_REGNUM, static_chain_offset));
-  trampoline[3] = OP (RISCV_ITYPE (JALR, 0, RISCV_PROLOGUE_TEMP_REGNUM, 0));
-
-#undef MATCH_LREG
-#undef OP
-
-  /* Copy the trampoline code.  Leave any padding uninitialized.  */
+  /* Copy the trampoline code.  */
   for (i = 0; i < ARRAY_SIZE (trampoline); i++)
     {
       mem = adjust_address (m_tramp, SImode, i * GET_MODE_SIZE (SImode));
-      riscv_emit_move (mem, trampoline[i]);
+      riscv_emit_move (mem, gen_int_mode (trampoline[i], SImode));
     }
 
   /* Set up the static chain pointer field.  */
@@ -4284,7 +4290,8 @@ riscv_trampoline_init (rtx m_tramp, tree fndecl, rtx chain_value)
 /* Implement TARGET_FUNCTION_OK_FOR_SIBCALL.  */
 
 static bool
-riscv_function_ok_for_sibcall (tree decl, tree exp ATTRIBUTE_UNUSED)
+riscv_function_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED,
+			       tree exp ATTRIBUTE_UNUSED)
 {
   if (TARGET_SAVE_RESTORE)
     {
@@ -4426,13 +4433,16 @@ riscv_lra_p (void)
 #define TARGET_ASM_SELECT_RTX_SECTION  riscv_elf_select_rtx_section
 
 #undef TARGET_MIN_ANCHOR_OFFSET
-#define TARGET_MIN_ANCHOR_OFFSET (-RISCV_IMM_REACH/2)
+#define TARGET_MIN_ANCHOR_OFFSET (-IMM_REACH/2)
 
 #undef TARGET_MAX_ANCHOR_OFFSET
-#define TARGET_MAX_ANCHOR_OFFSET (RISCV_IMM_REACH/2-1)
+#define TARGET_MAX_ANCHOR_OFFSET (IMM_REACH/2-1)
 
 #undef TARGET_LRA_P
 #define TARGET_LRA_P riscv_lra_p
+
+#undef TARGET_REGISTER_PRIORITY
+#define TARGET_REGISTER_PRIORITY riscv_register_priority
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

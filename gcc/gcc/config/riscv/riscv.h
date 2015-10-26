@@ -30,20 +30,21 @@ along with GCC; see the file COPYING3.  If not see
 #define TARGET_CPU_CPP_BUILTINS()					\
   do									\
     {									\
-      builtin_assert ("machine=riscv");                        	        \
+      builtin_assert ("machine=riscv");					\
 									\
       builtin_assert ("cpu=riscv");					\
-      builtin_define ("__riscv__");     				\
-      builtin_define ("__riscv");     					\
+      builtin_define ("__riscv__");					\
+      builtin_define ("__riscv");					\
       builtin_define ("_riscv");					\
+      builtin_define ("__riscv");					\
 									\
       if (TARGET_64BIT)							\
 	{								\
 	  builtin_define ("__riscv64");					\
-	  builtin_define ("_RISCV_SIM=_ABI64");			        \
+	  builtin_define ("_RISCV_SIM=_ABI64");				\
 	}								\
-      else						        	\
-	builtin_define ("_RISCV_SIM=_ABI32");			        \
+      else								\
+	builtin_define ("_RISCV_SIM=_ABI32");				\
 									\
       builtin_define ("_ABI32=1");					\
       builtin_define ("_ABI64=3");					\
@@ -54,10 +55,12 @@ along with GCC; see the file COPYING3.  If not see
       builtin_define_with_int_value ("_RISCV_SZPTR", POINTER_SIZE);	\
       builtin_define_with_int_value ("_RISCV_FPSET", 32);		\
 									\
-      if (TARGET_ATOMIC) {                                              \
-        builtin_define ("__riscv_atomic");                              \
-      }                                                                 \
-                                                                        \
+      if (TARGET_RVC)							\
+	builtin_define ("__riscv_compressed");				\
+									\
+      if (TARGET_ATOMIC)						\
+	builtin_define ("__riscv_atomic");				\
+									\
       /* These defines reflect the ABI in use, not whether the  	\
 	 FPU is directly accessible.  */				\
       if (TARGET_HARD_FLOAT_ABI) {					\
@@ -169,7 +172,8 @@ along with GCC; see the file COPYING3.  If not see
 #define ASM_SPEC "\
 %(subtarget_asm_debugging_spec) \
 %{m32} %{m64} %{!m32:%{!m64: %(asm_abi_default_spec)}} \
-%{mrvc} \
+%{mrvc} %{mno-rvc} \
+%{msoft-float} %{mhard-float} \
 %{fPIC|fpic|fPIE|fpie:-fpic} \
 %{march=*} \
 %(subtarget_asm_spec)"
@@ -625,13 +629,13 @@ enum reg_class
 #define REG_ALLOC_ORDER							\
 { \
   /* Call-clobbered GPRs.  */						\
-  15, 14, 13, 12, 11, 10, 16, 17, 5, 6, 7, 28, 29, 30, 31, 1,		\
+  15, 14, 13, 12, 11, 10, 16, 17, 6, 28, 29, 30, 31, 5, 7, 1,		\
   /* Call-saved GPRs.  */						\
   8, 9, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,	       			\
   /* GPRs that can never be exposed to the register allocator.  */	\
   0, 2, 3, 4,								\
   /* Call-clobbered FPRs.  */						\
-  32, 33, 34, 35, 36, 37, 38, 39, 42, 43, 44, 45, 46, 47, 48, 49,	\
+  47, 46, 45, 44, 43, 42, 32, 33, 34, 35, 36, 37, 38, 39, 48, 49,	\
   60, 61, 62, 63,							\
   /* Call-saved FPRs.  */						\
   40, 41, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,			\
@@ -642,15 +646,14 @@ enum reg_class
 
 /* True if VALUE is a signed 16-bit number.  */
 
-#include "opcode-riscv.h"
 #define SMALL_OPERAND(VALUE) \
-  ((unsigned HOST_WIDE_INT) (VALUE) + RISCV_IMM_REACH/2 < RISCV_IMM_REACH)
+  ((unsigned HOST_WIDE_INT) (VALUE) + IMM_REACH/2 < IMM_REACH)
 
 /* True if VALUE can be loaded into a register using LUI.  */
 
-#define LUI_OPERAND(VALUE)					\
-  (((VALUE) | ((1UL<<31) - RISCV_IMM_REACH)) == ((1UL<<31) - RISCV_IMM_REACH) \
-   || ((VALUE) | ((1UL<<31) - RISCV_IMM_REACH)) + RISCV_IMM_REACH == 0)
+#define LUI_OPERAND(VALUE)						\
+  (((VALUE) | ((1UL<<31) - IMM_REACH)) == ((1UL<<31) - IMM_REACH)	\
+   || ((VALUE) | ((1UL<<31) - IMM_REACH)) + IMM_REACH == 0)
 
 /* Return a value X with the low 16 bits clear, and such that
    VALUE - X is a signed 16-bit value.  */
@@ -1110,3 +1113,17 @@ extern const char* riscv_hi_relocs[];
 
 #define ASM_PREFERRED_EH_DATA_FORMAT(CODE,GLOBAL) \
   (((GLOBAL) ? DW_EH_PE_indirect : 0) | DW_EH_PE_pcrel | DW_EH_PE_sdata4)
+
+/* ISA constants needed for code generation.  */
+#define OPCODE_LW    0x2003
+#define OPCODE_LD    0x3003
+#define OPCODE_AUIPC 0x17
+#define OPCODE_JALR  0x67
+#define SHIFT_RD  7
+#define SHIFT_RS1 15
+#define SHIFT_IMM 20
+#define IMM_BITS 12
+
+#define IMM_REACH (1LL << IMM_BITS)
+#define CONST_HIGH_PART(VALUE) (((VALUE) + (IMM_REACH/2)) & ~(IMM_REACH-1))
+#define CONST_LOW_PART(VALUE) ((VALUE) - CONST_HIGH_PART (VALUE))

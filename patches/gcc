@@ -23,25 +23,32 @@
  rs6000*-*-*)
  	extra_options="${extra_options} g.opt fused-madd.opt rs6000/rs6000-tables.opt"
  	;;
-@@ -1976,6 +1980,27 @@ microblaze*-*-elf)
+@@ -1976,6 +1980,34 @@ microblaze*-*-elf)
  	cxx_target_objs="${cxx_target_objs} microblaze-c.o"
  	tmake_file="${tmake_file} microblaze/t-microblaze"
          ;;
-+riscv32*-*-linux*)				# Linux RISC-V
++riscv32*-*-linux*)
 +	tm_file="elfos.h gnu-user.h linux.h glibc-stdint.h riscv/default-32.h ${tm_file} riscv/linux.h riscv/linux64.h"
 +	tmake_file="${tmake_file} riscv/t-linux64"
 +	gnu_ld=yes
 +	gas=yes
 +	gcc_cv_initfini_array=yes
 +	;;
-+riscv*-*-linux*)				# Linux RISC-V
++riscv*-*-linux*)
 +	tm_file="elfos.h gnu-user.h linux.h glibc-stdint.h ${tm_file} riscv/linux.h riscv/linux64.h"
 +	tmake_file="${tmake_file} riscv/t-linux64"
 +	gnu_ld=yes
 +	gas=yes
 +	gcc_cv_initfini_array=yes
 +	;;
-+riscv*-*-elf*)				# Linux RISC-V
++riscv32*-*-elf*)
++	tm_file="elfos.h newlib-stdint.h riscv/default-32.h ${tm_file} riscv/elf.h"
++	tmake_file="${tmake_file} riscv/t-elf"
++	gnu_ld=yes
++	gas=yes
++	gcc_cv_initfini_array=yes
++	;;
++riscv*-*-elf*)
 +	tm_file="elfos.h newlib-stdint.h ${tm_file} riscv/elf.h"
 +	tmake_file="${tmake_file} riscv/t-elf"
 +	gnu_ld=yes
@@ -51,7 +58,7 @@
  mips*-*-netbsd*)			# NetBSD/mips, either endian.
  	target_cpu_default="MASK_ABICALLS"
  	tm_file="elfos.h ${tm_file} mips/elf.h netbsd.h netbsd-elf.h mips/netbsd.h"
-@@ -3860,6 +3885,31 @@ case "${target}" in
+@@ -3860,6 +3892,31 @@ case "${target}" in
  		done
  		;;
  
@@ -308,3 +315,28 @@ diff -ru gcc-5.1.0.orig/libsanitizer/sanitizer_common/sanitizer_platform_limits_
    const unsigned struct___old_kernel_stat_sz = 0;
  #elif !defined(__sparc__)
    const unsigned struct___old_kernel_stat_sz = 32;
+--- original-gcc/libstdc++-v3/configure
++++ gcc/libstdc++-v3/configure
+@@ -16641,7 +16641,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+   # Long term, -std=c++0x could be even better, could manage to explicitly
+   # request C99 facilities to the underlying C headers.
+   ac_save_CXXFLAGS="$CXXFLAGS"
+-  CXXFLAGS="$CXXFLAGS -std=c++98"
++  CXXFLAGS="$CXXFLAGS -std=gnu++98"
+   ac_save_LIBS="$LIBS"
+   ac_save_gcc_no_link="$gcc_no_link"
+ 
+@@ -17263,9 +17263,11 @@ rm -f core conftest.err conftest.$ac_obj
+ $as_echo "$glibcxx_cv_c99_wchar" >&6; }
+   fi
+ 
++  # For newlib, don't check complex since missing c99 functions, but
++  #   rest of c99 stuff is there so don't loose it
+   # Option parsed, now set things appropriately.
+   if test x"$glibcxx_cv_c99_math" = x"no" ||
+-     test x"$glibcxx_cv_c99_complex" = x"no" ||
++     # test x"$glibcxx_cv_c99_complex" = x"no" ||
+      test x"$glibcxx_cv_c99_stdio" = x"no" ||
+      test x"$glibcxx_cv_c99_stdlib" = x"no" ||
+      test x"$glibcxx_cv_c99_wchar" = x"no"; then
+
