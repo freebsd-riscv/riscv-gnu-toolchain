@@ -30,7 +30,7 @@
 #define _SYS__TYPES_H_
 
 #include <sys/cdefs.h>
-#include <machine/_types.h>
+#include "machine/_types.h"
 
 /*
  * Standard type definitions.

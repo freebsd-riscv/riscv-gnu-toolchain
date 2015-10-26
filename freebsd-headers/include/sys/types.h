@@ -41,7 +41,7 @@
 #include <sys/cdefs.h>
 
 /* Machine type dependent parameters. */
-#include <machine/endian.h>
+#include "machine/endian.h"
 #include <sys/_types.h>
 
 #include <sys/_pthreadtypes.h>
