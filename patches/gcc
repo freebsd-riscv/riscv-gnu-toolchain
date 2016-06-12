@@ -279,21 +279,8 @@ diff -N -r -u original-gcc/gcc/testsuite/gcc.dg/20020312-2.c original-gcc2/gcc/t
  #elif defined(__RX__)
  /* No pic register.  */
  #elif defined(__s390__)
-diff -N -r -u original-gcc/gcc/testsuite/gcc.dg/20040813-1.c original-gcc2/gcc/testsuite/gcc.dg/20040813-1.c
---- original-gcc/gcc/testsuite/gcc.dg/20040813-1.c	2014-11-10 16:30:33.000000000 +0000
-+++ original-gcc2/gcc/testsuite/gcc.dg/20040813-1.c	2016-03-22 13:58:54.606367898 +0000
-@@ -2,7 +2,7 @@
- /* Contributed by Devang Patel  <dpatel@apple.com>  */
- 
- /* { dg-do compile } */
--/* { dg-skip-if "No stabs" { aarch64*-*-* mmix-*-* *-*-aix* alpha*-*-* hppa*64*-*-* ia64-*-* tile*-*-* nios2-*-* *-*-vxworks* nvptx-*-* } { "*" } { "" } } */
-+/* { dg-skip-if "No stabs" { aarch64*-*-* mmix-*-* *-*-aix* alpha*-*-* hppa*64*-*-* ia64-*-* riscv*-*-* tile*-*-* nios2-*-* *-*-vxworks* nvptx-*-* } { "*" } { "" } } */
- /* { dg-options "-gstabs" } */
- 
- int
-diff -N -r -u original-gcc/gcc/testsuite/gcc.dg/stack-usage-1.c original-gcc2/gcc/testsuite/gcc.dg/stack-usage-1.c
---- original-gcc/gcc/testsuite/gcc.dg/stack-usage-1.c	2013-12-31 07:05:35.000000000 +0000
-+++ original-gcc2/gcc/testsuite/gcc.dg/stack-usage-1.c	2016-03-22 13:58:54.607367988 +0000
+--- original-gcc/gcc/testsuite/gcc.dg/stack-usage-1.c
++++ gcc/gcc/testsuite/gcc.dg/stack-usage-1.c
 @@ -61,6 +61,8 @@
  #  else
  #    define SIZE 240
@@ -346,10 +333,9 @@ diff -N -r -u original-gcc/libgcc/config.host original-gcc2/libgcc/config.host
  rs6000-ibm-aix4.[3456789]* | powerpc-ibm-aix4.[3456789]*)
  	md_unwind_header=rs6000/aix-unwind.h
  	tmake_file="t-fdpbit rs6000/t-ppc64-fp rs6000/t-slibgcc-aix rs6000/t-ibm-ldouble"
-diff -N -r -u original-gcc/libsanitizer/asan/asan_linux.cc original-gcc2/libsanitizer/asan/asan_linux.cc
---- original-gcc/libsanitizer/asan/asan_linux.cc	2014-09-23 17:59:53.000000000 +0000
-+++ original-gcc2/libsanitizer/asan/asan_linux.cc	2016-03-22 13:58:54.609370950 +0000
-@@ -213,6 +213,11 @@
+--- original-gcc/libsanitizer/sanitizer_common/sanitizer_linux.cc
++++ gcc/libsanitizer/sanitizer_common/sanitizer_linux.cc
+@@ -213,6 +213,11 @@ void GetPcSpBp(void *context, uptr *pc,
    *pc = ucontext->uc_mcontext.gregs[31];
    *bp = ucontext->uc_mcontext.gregs[30];
    *sp = ucontext->uc_mcontext.gregs[29];
@@ -411,37 +397,3 @@ diff -N -r -u original-gcc/libsanitizer/sanitizer_common/sanitizer_platform_limi
    const unsigned struct___old_kernel_stat_sz = 0;
  #elif !defined(__sparc__)
    const unsigned struct___old_kernel_stat_sz = 32;
-@@ -511,7 +514,7 @@
-   typedef long __sanitizer___kernel_off_t;
- #endif
- 
--#if defined(__powerpc__) || defined(__mips__)
-+#if defined(__powerpc__) || defined(__mips__) || defined(__riscv__)
-   typedef unsigned int __sanitizer___kernel_old_uid_t;
-   typedef unsigned int __sanitizer___kernel_old_gid_t;
- #else
-diff -N -r -u original-gcc/libstdc++-v3/configure original-gcc2/libstdc++-v3/configure
---- original-gcc/libstdc++-v3/configure	2015-11-26 13:51:04.000000000 +0000
-+++ original-gcc2/libstdc++-v3/configure	2016-03-22 13:58:54.634367674 +0000
-@@ -16646,7 +16646,7 @@
-   # Long term, -std=c++0x could be even better, could manage to explicitly
-   # request C99 facilities to the underlying C headers.
-   ac_save_CXXFLAGS="$CXXFLAGS"
--  CXXFLAGS="$CXXFLAGS -std=c++98"
-+  CXXFLAGS="$CXXFLAGS -std=gnu++98"
-   ac_save_LIBS="$LIBS"
-   ac_save_gcc_no_link="$gcc_no_link"
- 
-@@ -17268,9 +17268,11 @@
- $as_echo "$glibcxx_cv_c99_wchar" >&6; }
-   fi
- 
-+  # For newlib, don't check complex since missing c99 functions, but
-+  #   rest of c99 stuff is there so don't loose it
-   # Option parsed, now set things appropriately.
-   if test x"$glibcxx_cv_c99_math" = x"no" ||
--     test x"$glibcxx_cv_c99_complex" = x"no" ||
-+     # test x"$glibcxx_cv_c99_complex" = x"no" ||
-      test x"$glibcxx_cv_c99_stdio" = x"no" ||
-      test x"$glibcxx_cv_c99_stdlib" = x"no" ||
-      test x"$glibcxx_cv_c99_wchar" = x"no"; then
