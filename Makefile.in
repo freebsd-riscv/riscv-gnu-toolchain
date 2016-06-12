@@ -277,13 +277,15 @@ stamps/build-gcc-newlib: src/newlib-gcc stamps/build-binutils-newlib
 	$(MAKE) -C $(notdir $@) install
 	mkdir -p $(dir $@) && touch $@
 
-stamps/build-binutils-freebsd: src/binutils
+stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils-gdb
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
-	cd $(notdir $@) && $(CURDIR)/$</configure \
+	cd $(notdir $@) && $</configure \
 		--target=riscv$(XLEN)-unknown-freebsd11.0 \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
+		--disable-gdb \
+		--disable-sim \
 		--enable-tls \
 		--disable-werror
 	$(MAKE) -C $(notdir $@)
