@@ -311,7 +311,7 @@ stamps/build-gcc-freebsd: src/gcc stamps/build-binutils-freebsd \
 		--disable-shared \
 		--disable-threads \
 		--enable-tls \
-		--enable-languages=c \
+		--enable-languages=c,c++ \
 		--with-gmp=/usr/local \
 		--with-mpfr=/usr/local \
 		--with-mpc=/usr/local \
