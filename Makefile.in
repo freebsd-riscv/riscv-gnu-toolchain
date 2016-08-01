@@ -309,7 +309,7 @@ stamps/build-gcc-freebsd: src/gcc stamps/build-binutils-freebsd \
 		--without-headers \
 		--disable-werror \
 		--disable-shared \
-		--disable-threads \
+		--enable-threads \
 		--enable-tls \
 		--enable-languages=c,c++ \
 		--with-gmp=/usr/local \
