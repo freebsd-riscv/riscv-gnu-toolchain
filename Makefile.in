@@ -293,11 +293,11 @@ stamps/build-freebsd-headers:
 	cp -a $(srcdir)/freebsd-headers/include $(SYSROOT)/usr/
 	mkdir -p $(dir $@) && touch $@
 
-stamps/build-gcc-freebsd: src/gcc stamps/build-binutils-freebsd \
+stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 					stamps/build-freebsd-headers
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
-	cd $(notdir $@) && $(CURDIR)/$</configure \
+	cd $(notdir $@) && $</configure \
 		--target=riscv$(XLEN)-unknown-freebsd11.0 \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \

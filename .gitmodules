@@ -6,4 +6,4 @@
 	url = ../riscv-gcc.git
 [submodule "riscv-glibc"]
 	path = riscv-glibc
-	url = ../riscv-glibc.git
+	url = https://github.com/riscv/riscv-glibc
