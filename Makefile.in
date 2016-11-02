@@ -16,6 +16,12 @@ WITH_ARCH ?= @WITH_ARCH@
 MULTILIB ?=
 SYSROOT := $(INSTALL_DIR)/sysroot
 
+ifeq ($(XLEN),32)
+LIBDIR := lib32
+else
+LIBDIR := lib
+endif
+
 SHELL := /bin/sh
 AWK := @GAWK@
 SED := @GSED@
@@ -35,14 +41,12 @@ export PATH AWK SED
 
 MULTILIB_FLAGS := @multilib_flags@
 ATOMIC_CFLAGS := @atomic_cflags@
-FLOAT_CFLAGS := @float_cflags@
-FLOAT_ASFLAGS := @float_asflags@
 BINUTILS_FLOAT_FLAGS := @binutils_float_flags@
 GCC_FLOAT_FLAGS := @gcc_float_flags@
 GLIBC_FLOAT_FLAGS := @glibc_float_flags@
 
-CFLAGS_FOR_TARGET := $(CFLAGS_FOR_TARGET_EXTRA) $(ATOMIC_CFLAGS) $(FLOAT_CFLAGS)
-ASFLAGS_FOR_TARGET := $(ASFLAGS_FOR_TARGET_EXTRA) $(FLOAT_ASFLAGS)
+CFLAGS_FOR_TARGET := $(CFLAGS_FOR_TARGET_EXTRA) $(ATOMIC_CFLAGS)
+ASFLAGS_FOR_TARGET := $(ASFLAGS_FOR_TARGET_EXTRA)
 
 all: @default_target@
 
@@ -125,9 +129,9 @@ stamps/build-binutils-linux: $(srcdir)/riscv-binutils-gdb
 		--target=riscv$(XLEN)-unknown-linux-gnu \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
-		--disable-sim \
 		$(BINUTILS_FLOAT_FLAGS) \
 		$(MULTILIB_FLAGS) \
+		--disable-werror \
 		--disable-nls
 	$(MAKE) -C $(notdir $@)
 	$(MAKE) -C $(notdir $@) install
@@ -226,6 +230,7 @@ stamps/build-gcc-linux-stage2: $(srcdir)/riscv-gcc stamps/build-glibc-linux$(XLE
 		$(WITH_ARCH)
 	$(MAKE) -C $(notdir $@)
 	$(MAKE) -C $(notdir $@) install
+	cp $(INSTALL_DIR)/riscv$(XLEN)-unknown-linux-gnu/$(LIBDIR)/lib*.so* $(SYSROOT)/usr/$(LIBDIR)
 	mkdir -p $(dir $@) && touch $@
 
 stamps/build-binutils-newlib: $(srcdir)/riscv-binutils-gdb
@@ -236,7 +241,6 @@ stamps/build-binutils-newlib: $(srcdir)/riscv-binutils-gdb
 		--prefix=$(INSTALL_DIR) \
 		--enable-tls \
 		--disable-werror \
-		--disable-sim \
 		$(BINUTILS_FLOAT_FLAGS)
 	$(MAKE) -C $(notdir $@)
 	$(MAKE) -C $(notdir $@) install
@@ -323,6 +327,20 @@ stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 	$(MAKE) -C $(notdir $@) inhibit-libc=true all-gcc
 	$(MAKE) -C $(notdir $@) inhibit-libc=true install-gcc
 	mkdir -p $(dir $@) && touch $@
+
+.PHONY: check-gcc-newlib
+check-gcc-newlib: stamps/build-gcc-newlib
+	export PATH=$(INSTALL_DIR)/bin:$(PATH) && \
+	export DEJAGNULIBS=$(srcdir)/riscv-dejagnu && \
+	cd build-gcc-newlib && \
+	$(MAKE) check-gcc "RUNTESTFLAGS=--target_board=riscv-sim"
+
+check-gcc-linux: stamps/build-gcc-linux-stage2
+	export PATH=$(srcdir)/scripts/wrapper/qemu:$(INSTALL_DIR)/bin:$(PATH) && \
+	export DEJAGNULIBS=$(srcdir)/riscv-dejagnu && \
+	export RISC_V_SYSROOT=$(SYSROOT) && \
+	cd build-gcc-linux-stage2 && \
+	$(MAKE) check-gcc "RUNTESTFLAGS=--target_board=riscv-sim"
 
 clean:
 	rm -rf build-* $(addprefix src/,$(PACKAGES)) stamps
