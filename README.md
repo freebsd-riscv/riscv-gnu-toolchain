@@ -24,15 +24,15 @@ Alternatively :
 Several standard packages are needed to build the toolchain.  On Ubuntu,
 executing the following command should suffice:
 
-    $ sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc
+    $ sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev
 
 On Fedora/CentOS/RHEL OS, executing the following command should suffice:
 
-    $ sudo yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++
+    $ sudo yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel
 
 On OS X, you can use [Homebrew](http://brew.sh) to install the dependencies:
 
-    $ brew install gawk gnu-sed gmp mpfr libmpc isl
+    $ brew install gawk gnu-sed gmp mpfr libmpc isl zlib
 
 To build the glibc (Linux) on OS X, you will need to build within a case-sensitive file
 system.  The simplest approach is to create and mount a new disk image with
@@ -69,6 +69,19 @@ run the following command:
     ./configure --prefix=/opt/riscv
     make linux
 
+The build defaults to targetting RV64G (64-bit), even on a 32-bit build
+environment.  To build the 32-bit RV32G toolchain, use:
+
+    ./configure --prefix=/opt/riscv --with-arch=rv32g --with-abi=ilp32d
+    make linux
+
+Supported architectures are rv32i or rv64i plus standard extensions (a)tomics,
+(m)ultiplication and division, (f)loat, (d)ouble, or (g)eneral for MAFD.
+
+Supported ABIs are ilp32 (32-bit soft-float), ilp32d (32-bit hard-float),
+ilp32f (32-bit with single-precision in registers and double in memory, niche
+use only), lp64 lp64f lp64d (same but with 64-bit long and pointers).
+
 ### Installation (Linux multilib)
 
 To build the Linux cross-compiler with support for both 32-bit and
@@ -92,7 +105,7 @@ simulator for elf toolchain or Qemu for linux toolchain, and GDB simulator
 doesn't support floating-point.
 To test GCC, run the following commands:
 
-    ./configure --prefix=$RISCV --disable-float --disable-linux
+    ./configure --prefix=$RISCV --disable-linux --with-arch=rv64ima # or --with-arch=rv32ima
     make newlib
     make check-gcc-newlib
 
