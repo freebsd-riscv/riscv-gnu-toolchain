@@ -1,6 +1,6 @@
-[submodule "riscv-gcc"]
-	path = riscv-gcc
-	url = ../riscv-gcc.git
 [submodule "riscv-binutils-gdb"]
 	path = riscv-binutils-gdb
 	url = https://github.com/freebsd-riscv/riscv-binutils-gdb
+[submodule "riscv-gcc"]
+	path = riscv-gcc
+	url = https://github.com/freebsd-riscv/riscv-gcc
