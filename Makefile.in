@@ -304,7 +304,7 @@ stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils-gdb
 		--disable-gdb \
 		--disable-sim \
 		--enable-tls \
-		--without-intl \
+		--disable-intl \
 		--disable-werror
 	$(MAKE) -C $(notdir $@)
 	$(MAKE) -C $(notdir $@) install
