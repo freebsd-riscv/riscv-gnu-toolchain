@@ -298,7 +298,7 @@ stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils-gdb
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--target=riscv$(XLEN)-unknown-freebsd11.0 \
+		--target=riscv$(XLEN)-unknown-freebsd12.0 \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
 		--disable-gdb \
@@ -319,7 +319,7 @@ stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--target=riscv$(XLEN)-unknown-freebsd11.0 \
+		--target=riscv$(XLEN)-unknown-freebsd12.0 \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
 		--without-newlib \
