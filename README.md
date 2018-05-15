@@ -1,6 +1,8 @@
 RISC-V GNU Compiler Toolchain
 =============================
 
+[![Build Status](https://travis-ci.org/riscv/riscv-gnu-toolchain.svg?branch=master)](https://travis-ci.org/riscv/riscv-gnu-toolchain)
+
 This is the RISC-V C and C++ cross-compiler. It supports two build modes:
 a generic ELF/Newlib toolchain and a more sophisticated Linux-ELF/glibc
 toolchain.
@@ -24,15 +26,15 @@ Alternatively :
 Several standard packages are needed to build the toolchain.  On Ubuntu,
 executing the following command should suffice:
 
-    $ sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev
+    $ sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
 
 On Fedora/CentOS/RHEL OS, executing the following command should suffice:
 
-    $ sudo yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel
+    $ sudo yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel expat-devel
 
 On OS X, you can use [Homebrew](http://brew.sh) to install the dependencies:
 
-    $ brew install gawk gnu-sed gmp mpfr libmpc isl zlib
+    $ brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat
 
 To build the glibc (Linux) on OS X, you will need to build within a case-sensitive file
 system.  The simplest approach is to create and mount a new disk image with
@@ -58,7 +60,7 @@ run the following command:
     ./configure --prefix=/opt/riscv
     make
 
-You should now be able to use riscv-gcc and its cousins.
+You should now be able to use riscv64-unknown-elf-gcc and its cousins.
 
 ### Installation (Linux)
 
@@ -90,8 +92,8 @@ To build the Linux cross-compiler with support for both 32-bit and
     ./configure --prefix=/opt/riscv --enable-multilib
     make linux
 
-The multilib compiler will have the prefix riscv-unknown-linux-gnu-,
-rather than the usual prefix (riscv32-... or riscv64-...).
+The multilib compiler will have the prefix riscv64-unknown-linux-gnu-,
+but will be able to target both 32-bit and 64-bit systems.
 
 ### Advanced Options
 
@@ -107,9 +109,8 @@ To test GCC, run the following commands:
 
     ./configure --prefix=$RISCV --disable-linux --with-arch=rv64ima # or --with-arch=rv32ima
     make newlib
-    make check-gcc-newlib
+    make report-newlib
 
     ./configure --prefix=$RISCV
     make linux
-    # Need qemu-riscv32 or qemu-riscv64 in your `PATH`.
-    make check-gcc-linux
+    make report-linux
