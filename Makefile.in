@@ -474,7 +474,7 @@ stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils-gdb
 		--target=riscv$(XLEN)-unknown-freebsd12.0 \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
-		--disable-gdb \
+		--enable-gdb \
 		--disable-sim \
 		--enable-tls \
 		--disable-intl \
