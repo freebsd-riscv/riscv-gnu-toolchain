@@ -24,7 +24,6 @@ OSREL = $(shell uname -r | sed s/-.*//g)
 WITH_ARCH ?= @WITH_ARCH@
 WITH_ABI ?= @WITH_ABI@
 SYSROOT := $(INSTALL_DIR)/sysroot
-CROSS_SYSROOT := 
 
 SHELL := /bin/sh
 AWK := @GAWK@
@@ -506,7 +505,7 @@ stamps/build-binutils-freebsd-native: $(srcdir)/riscv-binutils-gdb
 		--disable-tls \
 		--disable-werror
 	$(MAKE) -C $(notdir $@)
-	$(MAKE) -C $(notdir $@) DESTDIR=$(CROSS_SYSROOT) install
+	$(MAKE) -C $(notdir $@) DESTDIR=$(SYSROOT) install
 	mkdir -p $(dir $@) && touch $@
 
 stamps/build-freebsd-headers:
@@ -560,9 +559,9 @@ stamps/build-gcc-freebsd-native: $(srcdir)/riscv-gcc stamps/build-binutils-freeb
 		--enable-threads \
 		--enable-tls \
 		--enable-languages=c,c++ \
-		--with-gmp=$(CROSS_SYSROOT) \
-		--with-mpfr=$(CROSS_SYSROOT) \
-		--with-mpc=$(CROSS_SYSROOT) \
+		--with-gmp=$(SYSROOT) \
+		--with-mpfr=$(SYSROOT) \
+		--with-mpc=$(SYSROOT) \
 		--disable-libatomic \
 		--disable-libmudflap \
 		--disable-libssp \
@@ -573,7 +572,7 @@ stamps/build-gcc-freebsd-native: $(srcdir)/riscv-gcc stamps/build-binutils-freeb
 		$(MULTILIB_FLAGS) \
 		$(WITH_ARCH)
 	$(MAKE) -C $(notdir $@) inhibit-libc=true all-gcc
-	$(MAKE) -C $(notdir $@) inhibit-libc=true DESTDIR=$(CROSS_SYSROOT) install-gcc
+	$(MAKE) -C $(notdir $@) inhibit-libc=true DESTDIR=$(SYSROOT) install-gcc
 	mkdir -p $(dir $@) && touch $@
 
 stamps/build-qemu: $(srcdir)/riscv-qemu
