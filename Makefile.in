@@ -19,9 +19,12 @@ gcc_url := $(GNU_MIRROR)/gcc/gcc-$(gcc_version)/gcc-$(gcc_version).tar.gz
 glibc_url := $(GNU_MIRROR)/glibc/glibc-$(glibc_version).tar.gz
 newlib_url := ftp://sourceware.org/pub/newlib/newlib-$(newlib_version).tar.gz
 
+OSREL = $(shell uname -r | sed s/-.*//g)
+
 WITH_ARCH ?= @WITH_ARCH@
 WITH_ABI ?= @WITH_ABI@
 SYSROOT := $(INSTALL_DIR)/sysroot
+CROSS_SYSROOT := 
 
 SHELL := /bin/sh
 AWK := @GAWK@
@@ -71,6 +74,12 @@ NEWLIB_NANO_TARGET_BOARDS ?= $(shell echo "$(NEWLIB_MULTILIB_NAMES)" | sed 's!\(
 freebsd:
 	$(MAKE) stamps/build-gcc-freebsd \
 		CFLAGS_FOR_TARGET_EXTRA="-I/usr/include -I/usr/local/include"
+
+freebsd-native:
+	$(MAKE) stamps/build-gcc-freebsd-native \
+		CFLAGS_FOR_TARGET_EXTRA="-D__NO_TLS=1 -I/usr/include -I/usr/local/include" \
+		LDFLAGS="-L/usr/local/lib" \
+		CXXFLAGS="-nodefaultlibs -lc++ -lm -lc -lgcc_s -lgcc_eh -lgcc -I/usr/include/c++/v1/"
 
 CONFIGURE_HOST   = @configure_host@
 
@@ -471,7 +480,7 @@ stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils-gdb
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--target=riscv$(XLEN)-unknown-freebsd12.0 \
+		--target=riscv$(XLEN)-unknown-freebsd$(OSREL) \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
 		--disable-gdb \
@@ -481,6 +490,23 @@ stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils-gdb
 		--disable-werror
 	$(MAKE) -C $(notdir $@)
 	$(MAKE) -C $(notdir $@) install
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-binutils-freebsd-native: $(srcdir)/riscv-binutils-gdb
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && $</configure \
+		--host=riscv$(XLEN)-unknown-freebsd$(OSREL) \
+		--target=riscv$(XLEN)-unknown-freebsd$(OSREL) \
+		$(CONFIGURE_HOST) \
+		--with-build-sysroot=$(SYSROOT) \
+		$(BINUTILS_GDB_NATIVE_FLAGS) \
+		--disable-host-shared \
+		--disable-nls \
+		--disable-tls \
+		--disable-werror
+	$(MAKE) -C $(notdir $@)
+	$(MAKE) -C $(notdir $@) DESTDIR=$(CROSS_SYSROOT) install
 	mkdir -p $(dir $@) && touch $@
 
 stamps/build-freebsd-headers:
@@ -493,7 +519,7 @@ stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--target=riscv$(XLEN)-unknown-freebsd12.0 \
+		--target=riscv$(XLEN)-unknown-freebsd$(OSREL) \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
 		--without-newlib \
@@ -517,6 +543,37 @@ stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 		$(WITH_ARCH)
 	$(MAKE) -C $(notdir $@) inhibit-libc=true all-gcc
 	$(MAKE) -C $(notdir $@) inhibit-libc=true install-gcc
+	mkdir -p $(dir $@) && touch $@
+
+stamps/build-gcc-freebsd-native: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd-native \
+					stamps/build-freebsd-headers
+	rm -rf $@ $(notdir $@)
+	mkdir $(notdir $@)
+	cd $(notdir $@) && $</configure \
+		--target=riscv$(XLEN)-unknown-freebsd$(OSREL) \
+		--host=riscv$(XLEN)-unknown-freebsd$(OSREL) \
+		--with-build-sysroot=$(SYSROOT) \
+		--without-newlib \
+		--without-headers \
+		--disable-werror \
+		--disable-shared \
+		--enable-threads \
+		--enable-tls \
+		--enable-languages=c,c++ \
+		--with-gmp=$(CROSS_SYSROOT) \
+		--with-mpfr=$(CROSS_SYSROOT) \
+		--with-mpc=$(CROSS_SYSROOT) \
+		--disable-libatomic \
+		--disable-libmudflap \
+		--disable-libssp \
+		--disable-libquadmath \
+		--disable-libgomp \
+		--disable-nls \
+		--disable-bootstrap \
+		$(MULTILIB_FLAGS) \
+		$(WITH_ARCH)
+	$(MAKE) -C $(notdir $@) inhibit-libc=true all-gcc
+	$(MAKE) -C $(notdir $@) inhibit-libc=true DESTDIR=$(CROSS_SYSROOT) install-gcc
 	mkdir -p $(dir $@) && touch $@
 
 stamps/build-qemu: $(srcdir)/riscv-qemu
