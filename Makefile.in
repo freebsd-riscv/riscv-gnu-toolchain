@@ -536,7 +536,7 @@ stamps/build-gcc-newlib-stage2: $(srcdir)/riscv-gcc stamps/build-newlib \
 	$(MAKE) -C $(notdir $@) install
 	mkdir -p $(dir $@) && touch $@
 
-stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils-gdb
+stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
@@ -552,7 +552,7 @@ stamps/build-binutils-freebsd: $(srcdir)/riscv-binutils-gdb
 	$(MAKE) -C $(notdir $@) install
 	mkdir -p $(dir $@) && touch $@
 
-stamps/build-binutils-freebsd-native: $(srcdir)/riscv-binutils-gdb
+stamps/build-binutils-freebsd-native: $(srcdir)/riscv-binutils
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
@@ -561,6 +561,7 @@ stamps/build-binutils-freebsd-native: $(srcdir)/riscv-binutils-gdb
 		$(CONFIGURE_HOST) \
 		--with-build-sysroot=$(SYSROOT) \
 		$(BINUTILS_GDB_NATIVE_FLAGS) \
+		--disable-gdb \
 		--disable-host-shared \
 		--disable-nls \
 		--disable-tls \
