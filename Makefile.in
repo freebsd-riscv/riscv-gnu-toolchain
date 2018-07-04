@@ -583,6 +583,7 @@ stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 		--target=riscv$(XLEN)-unknown-freebsd$(OSREL) \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
+		--with-gxx-include-dir=/usr/include/c++/v1/ \
 		--without-newlib \
 		--without-headers \
 		--disable-werror \
