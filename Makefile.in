@@ -605,6 +605,7 @@ stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 		$(WITH_ARCH)
 	$(MAKE) -C $(notdir $@) inhibit-libc=true all-gcc
 	$(MAKE) -C $(notdir $@) inhibit-libc=true install-gcc
+	rm -rf $(INSTALL_DIR)/lib/gcc/riscv64-unknown-freebsd*/*/include-fixed
 	mkdir -p $(dir $@) && touch $@
 
 stamps/build-gcc-freebsd-native: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd-native \
