@@ -579,6 +579,8 @@ stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 					stamps/build-freebsd-headers
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
+	sed -i.bak -e '/LIBSTDCXX/ s/stdc\+\+/c\+\+/g ' riscv-gcc/gcc/cp/g++spec.c
+	sed -i.bak -e '/LOCAL_INCLUDE_DIR/ d ' riscv-gcc/gcc/Makefile.in
 	cd $(notdir $@) && $</configure \
 		--target=riscv$(XLEN)-unknown-freebsd$(OSREL) \
 		--prefix=$(INSTALL_DIR) \
@@ -587,7 +589,6 @@ stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 		--without-newlib \
 		--without-headers \
 		--disable-werror \
-		--disable-shared \
 		--enable-threads \
 		--enable-tls \
 		--enable-languages=c,c++ \
