@@ -50,13 +50,6 @@ AS_IF([test "x$enable_linux" != xno],
 	[AC_SUBST(default_target, linux)],
 	[AC_SUBST(default_target, newlib)])
 
-AC_ARG_ENABLE(atomic,
-	[AS_HELP_STRING([--disable-atomic],
-		[disable use of atomic memory instructions in glibc @<:@--enable-atomic@:>@])],
-	[],
-	[enable_atomic=yes]
-	)
-
 AC_ARG_WITH(arch,
 	[AS_HELP_STRING([--with-arch=rv64imafdc],
 		[Sets the base RISC-V ISA, defaults to rv64imafdc])],
@@ -76,6 +69,7 @@ AS_IF([test "x$with_abi" == xdefault],
 		[*rv64g* | *rv64*d*], [with_abi=lp64d],
 		[*rv64*f*], [with_abi=lp64f],
 		[*rv64*], [with_abi=lp64],
+		[*rv32e*], [with_abi=ilp32e],
 		[*rv32g* | *rv32*d*], [with_abi=ilp32d],
 		[*rv32*f*], [with_abi=ilp32f],
 		[*rv32*], [with_abi=ilp32],

@@ -656,7 +656,6 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_linux
-enable_atomic
 with_arch
 with_abi
 enable_multilib
@@ -1297,8 +1296,6 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-linux          set linux as the default make target
                           [--disable-linux]
-  --disable-atomic        disable use of atomic memory instructions in glibc
-                          [--enable-atomic]
   --enable-multilib       build both RV32 and RV64 runtime libraries
                           [--disable-multilib]
   --enable-gcc-checking   Enable gcc internal checking, it will make gcc very
@@ -3231,15 +3228,6 @@ else
 
 fi
 
-# Check whether --enable-atomic was given.
-if test "${enable_atomic+set}" = set; then :
-  enableval=$enable_atomic;
-else
-  enable_atomic=yes
-
-fi
-
-
 
 # Check whether --with-arch was given.
 if test "${with_arch+set}" = set; then :
@@ -3268,6 +3256,8 @@ if test "x$with_abi" == xdefault; then :
     with_abi=lp64f ;; #(
   *rv64*) :
     with_abi=lp64 ;; #(
+  *rv32e*) :
+    with_abi=ilp32e ;; #(
   *rv32g* | *rv32*d*) :
     with_abi=ilp32d ;; #(
   *rv32*f*) :
