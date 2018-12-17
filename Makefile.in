@@ -766,6 +766,7 @@ stamps/build-gcc-freebsd-native: $(srcdir)/riscv-gcc stamps/build-binutils-freeb
 					stamps/build-freebsd-headers
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
+	sed -i.bak -e '/GMPLIBS = @GMPLIBS@/ s/GMPLIBS =.*/GMPLIBS = @GMPLIBS@ -lcompiler_rt/g ' riscv-gcc/gcc/Makefile.in
 	cd $(notdir $@) && $</configure \
 		--target=riscv$(XLEN)-unknown-freebsd$(OSREL) \
 		--host=riscv$(XLEN)-unknown-freebsd$(OSREL) \
