@@ -777,9 +777,9 @@ stamps/build-gcc-freebsd-native: $(srcdir)/riscv-gcc stamps/build-binutils-freeb
 		--enable-threads \
 		--enable-tls \
 		--enable-languages=c,c++ \
-		--with-gmp=$(SYSROOT) \
-		--with-mpfr=$(SYSROOT) \
-		--with-mpc=$(SYSROOT) \
+		--with-gmp=$(SYSROOT)/usr/local \
+		--with-mpfr=$(SYSROOT)/usr/local \
+		--with-mpc=$(SYSROOT)/usr/local \
 		--disable-libatomic \
 		--disable-libmudflap \
 		--disable-libssp \
