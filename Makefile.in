@@ -724,9 +724,9 @@ stamps/build-binutils-freebsd-native: $(srcdir)/riscv-binutils
 	mkdir -p $(dir $@) && touch $@
 
 stamps/build-freebsd-headers:
-	mkdir -p $(SYSROOT)/usr/
-	cp -a $(srcdir)/freebsd-headers/include $(SYSROOT)/usr/
-	mkdir -p $(dir $@) && touch $@
+	if ! test -d $(SYSROOT)/usr/include; then mkdir -p $(SYSROOT)/usr/ && \
+	cp -a $(srcdir)/freebsd-headers/include $(SYSROOT)/usr/ && \
+	mkdir -p $(dir $@) && touch $@; fi
 
 stamps/build-gcc-freebsd: $(srcdir)/riscv-gcc stamps/build-binutils-freebsd \
 					stamps/build-freebsd-headers
